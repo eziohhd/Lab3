@@ -8,7 +8,7 @@ entity ALU is
           FN         : in  std_logic_vector (3 downto 0);   -- ALU functions provided by the ALU_Controller (see the lab manual)
           result 	   : out std_logic_vector (7 downto 0);   -- ALU output (unsigned binary)
 	       overflow   : out std_logic;                       -- '1' if overflow ocurres, '0' otherwise 
-	       sign       : out std_logic                       -- '1' if the result is a negative value, '0' otherwis
+	       sign_re       : out std_logic                       -- '1' if the result is a negative value, '0' otherwis
         );
 end ALU;
 
@@ -28,11 +28,16 @@ begin
        case FN is
        when "0000" =>
            result <= A;
+           sign_re <= '0';
+           overflow <= '0';
        --input B
        when "0001" =>
-           result <= B;  
+           result <= B; 
+           sign_re <= '0';
+           overflow <= '0';
        --unsigned A+B
        when  "0010" =>
+           sign_re <= '0';
            A_ext_u <= unsigned('0' & A);
            B_ext_u <= unsigned('0' & B);
            result_ext_u <= A_ext_u + B_ext_u;
@@ -48,16 +53,18 @@ begin
             B_ext_u <= unsigned('0' & B);
             if (A_ext_u < B_ext_u ) then
                 result_ext_u <= B_ext_u - A_ext_u;
-                sign <= '1';
+                sign_re <= '1';
                 overflow <= '0';
             else 
                 result_ext_u <= A_ext_u - B_ext_u;
-                sign <= '0';
+                sign_re <= '0';
                 overflow <= '0';
             end if;
             result <= std_logic_vector(result_ext_u(7 downto 0));
          --unsigned A mod 3
          when "0100" =>
+             sign_re <= '0';
+             overflow <= '0';
              A_u <= unsigned(A);
              if A_u > 192 then
                 A_1 <= A_u - 192;
@@ -107,10 +114,11 @@ begin
             else 
                 sign_out <=  not sign_s;
             end if;
-            sign <= sign_out;
+            sign_re <= sign_out;
             if sign_out = '0' then
                 result <= std_logic_vector(result_ext_s(7 downto 0));
-            else result <= std_logic_vector((not result_ext_s(7 downto 0)) + 1);
+            elsif sign_out = '1' then
+             result <= std_logic_vector( not result_ext_s(7 downto 0)+ 1) ;
             end if;
          --signed A-b
          when  "1011" =>
@@ -125,13 +133,16 @@ begin
             else 
                 sign_out <=  not sign_s;
             end if;
-            sign <= sign_out;
+            sign_re <= sign_out;
             if sign_out = '0' then                                
                 result <= std_logic_vector(result_ext_s(7 downto 0));            
-            else result <= std_logic_vector((not result_ext_s(7 downto 0)) + 1);
+            elsif sign_out = '1' then
+            result <= std_logic_vector((not result_ext_s(7 downto 0)) + 1);
             end if;
          --signed A mod 3
          when "1100" =>
+             sign_re <= '0';
+             overflow <= '0';
             if A(7) = '0' then
                 A_u <= unsigned(A);
             else
@@ -176,7 +187,7 @@ begin
         when others =>
             result <= "00000000";                                 
             overflow <= '0';
-            sign <= '0'; 
+            sign_re <= '0'; 
         end case;    
             
    -- DEVELOPE YOUR CODE HERE
